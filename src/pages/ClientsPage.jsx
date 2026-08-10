@@ -1,0 +1,3 @@
+import PageHeader from '../components/PageHeader';
+import { clients } from '../data/fixtures';
+export default function ClientsPage(){return <div className="page"><PageHeader eyebrow="BUSINESS / 01" title="Clients" copy="Relationships, not a CRM costume. Just enough context to know who is on the other side of the work."/><div className="data-table"><div className="data-table__head"><span>CLIENT</span><span>CONTACT</span><span>PROJECTS</span><span>VALUE</span><span>LAST ACTIVE</span></div>{clients.map(x=><div className="data-table__row" key={x.id}><b>{x.name}</b><span>{x.contact}</span><span>{x.projects}</span><span>₾{x.value.toLocaleString()}</span><span>{x.last}</span></div>)}</div></div>}
