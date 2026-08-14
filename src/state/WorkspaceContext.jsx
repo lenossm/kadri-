@@ -1,27 +1,28 @@
 import { createContext, useCallback, useContext, useMemo, useReducer, useState } from 'react';
-import { createSeedState, MEDIA, stages } from '../data/fixtures';
+import { createSeedState, MEDIA, stages, demoPeople } from '../data/fixtures';
 import { parseBudget, slugify, todayIso } from '../utils/format';
 import { paymentStatus } from '../utils/selectors';
+import { CAP, DEFAULT_PROJECT_ACCESS, can as canCap, filterProjects } from '../permissions/engine';
 
-const WorkspaceContext = createContext(null);
+export const WorkspaceContext = createContext(null);
 const STORAGE_KEY = 'kadri_demo_workspace';
 const ROLE_KEY = 'kadri_demo_role';
 const LEGACY_KEY = 'kadri-workspace-v1';
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 function stamp() {
   return Date.now();
 }
 
-function activity(text, projectId = null) {
-  return { id: `act-${stamp()}`, at: new Date().toISOString(), text, projectId };
+function activity(text, projectId = null, visibility = 'internal') {
+  return { id: `act-${stamp()}`, at: new Date().toISOString(), text, projectId, visibility };
 }
 
 function hydrate(parsed) {
   const seed = createSeedState();
-  if (!parsed || parsed.version !== STATE_VERSION || !Array.isArray(parsed.projects)) return seed;
+  if (!parsed || parsed.version < 2 || !Array.isArray(parsed.projects)) return seed;
   return {
-    version: STATE_VERSION,
+    version: 3,
     projects: parsed.projects ?? seed.projects,
     inquiries: parsed.inquiries ?? seed.inquiries,
     ideas: parsed.ideas ?? seed.ideas,
@@ -30,6 +31,8 @@ function hydrate(parsed) {
     payments: parsed.payments ?? seed.payments,
     publishing: parsed.publishing ?? seed.publishing,
     activity: parsed.activity ?? seed.activity,
+    projectMembers: parsed.projectMembers ?? seed.projectMembers,
+    team: parsed.team ?? seed.team,
   };
 }
 
@@ -161,7 +164,7 @@ function reducer(state, action) {
         projects: [project, ...state.projects],
         payments: payment ? [payment, ...state.payments] : state.payments,
         inquiries: state.inquiries.map((x) => x.id === inquiry.id ? { ...x, status: 'Converted', clientId: client.id } : x),
-        activity: [activity(`${title} opened from inquiry.`, project.id), ...state.activity].slice(0, 40),
+        activity: [activity(`${action.actorName ? `${action.actorName} opened` : 'Opened'} ${title} from inquiry.`, project.id), ...state.activity].slice(0, 40),
       };
       break;
     }
@@ -187,7 +190,7 @@ function reducer(state, action) {
         ...state,
         reviews,
         projects: state.projects.map((x) => x.id === action.id ? { ...x, ...patch } : x),
-        activity: [activity(`${project.title} moved to ${stage}.`, project.id), ...state.activity].slice(0, 40),
+        activity: [activity(`${action.actorName ? `${action.actorName} moved` : 'Moved'} ${project.title} to ${stage}.`, project.id), ...state.activity].slice(0, 40),
       };
       break;
     }
@@ -218,9 +221,9 @@ function reducer(state, action) {
       next = {
         ...state,
         reviews: state.reviews.map((x) => x.id === action.id
-          ? { ...x, comments: [...x.comments, { id: `c-${stamp()}`, time: action.payload.time, author: action.payload.author, text: action.payload.text }] }
+          ? { ...x, comments: [...x.comments, { id: `c-${stamp()}`, time: action.payload.time, author: action.payload.author, text: action.payload.text, visibility: action.payload.visibility || 'internal' }] }
           : x),
-        activity: [activity(`Note added on ${state.reviews.find((r) => r.id === action.id)?.title || 'a review'}.`, state.reviews.find((r) => r.id === action.id)?.projectId), ...state.activity].slice(0, 40),
+        activity: [activity(`${action.payload.author || action.actorName || 'Studio'} added a note on ${state.reviews.find((r) => r.id === action.id)?.title || 'a review'}.`, state.reviews.find((r) => r.id === action.id)?.projectId), ...state.activity].slice(0, 40),
       };
       break;
     case 'SET_REVIEW_STATUS': {
@@ -229,7 +232,7 @@ function reducer(state, action) {
       let reviews = state.reviews.map((x) => x.id === action.id ? { ...x, status: action.status } : x);
       if (action.note) {
         reviews = reviews.map((x) => x.id === action.id
-          ? { ...x, comments: [...x.comments, { id: `c-${stamp()}`, time: action.time ?? 0, author: action.author || 'Elene', text: action.note }] }
+          ? { ...x, comments: [...x.comments, { id: `c-${stamp()}`, time: action.time ?? 0, author: action.author || 'Elene', text: action.note, visibility: action.visibility || 'client' }] }
           : x);
       }
       let projects = state.projects;
@@ -243,7 +246,7 @@ function reducer(state, action) {
         ...state,
         reviews,
         projects,
-        activity: [activity(`${review.title} marked ${action.status}.`, review.projectId), ...state.activity].slice(0, 40),
+        activity: [activity(`${action.author || action.actorName || 'Studio'} marked ${review.title} ${action.status}.`, review.projectId), ...state.activity].slice(0, 40),
       };
       break;
     }
@@ -253,7 +256,7 @@ function reducer(state, action) {
       next = {
         ...state,
         payments: state.payments.map((x) => x.id === action.id ? { ...x, status: action.status } : x),
-        activity: [activity(`${payment.invoice} marked ${action.status}.`, payment.projectId), ...state.activity].slice(0, 40),
+        activity: [activity(`${action.actorName ? `${action.actorName} marked` : ''} ${payment.invoice} ${action.status}.`.trim(), payment.projectId, 'finance'), ...state.activity].slice(0, 40),
       };
       break;
     }
@@ -277,6 +280,16 @@ function reducer(state, action) {
       next = { ...state, publishing: [item, ...state.publishing] };
       break;
     }
+    case 'PUBLISH_REVIEW': {
+      const review = state.reviews.find((x) => x.id === action.id);
+      if (!review) return state;
+      next = {
+        ...state,
+        reviews: state.reviews.map((x) => x.id === action.id ? { ...x, publishedToClient: true } : x),
+        activity: [activity(`${action.actorName || 'Producer'} sent ${review.title} to the client.`, review.projectId), ...state.activity].slice(0, 40),
+      };
+      break;
+    }
     case 'RESET':
       next = createSeedState();
       break;
@@ -287,29 +300,54 @@ function reducer(state, action) {
 }
 
 function scopeState(state, role) {
-  if (role !== 'client') return state;
-  const clientId = 'client-northline';
-  const projects = state.projects.filter((p) => p.clientId === clientId);
+  const actor = demoPeople[role] || demoPeople.owner;
+  const assignedProjectIds = (state.projectMembers || [])
+    .filter((m) => m.userId === actor.id)
+    .map((m) => m.projectId);
+  const perm = {
+    kind: 'member',
+    role,
+    status: 'active',
+    projectAccess: DEFAULT_PROJECT_ACCESS[role] || 'selected',
+    assignedProjectIds,
+    extraPermissions: [],
+  };
+  const projects = filterProjects(state.projects, perm);
   const ids = new Set(projects.map((p) => p.id));
+  const seeInternal = canCap(perm, CAP.REVIEW_COMMENT_INTERNAL);
+  const seeFinance = canCap(perm, CAP.FINANCE_VIEW) || canCap(perm, CAP.PAYMENT_VIEW);
   return {
     ...state,
     projects,
-    reviews: state.reviews.filter((r) => ids.has(r.projectId)),
-    payments: state.payments.filter((p) => p.clientId === clientId),
-    publishing: state.publishing.filter((p) => ids.has(p.projectId)),
-    inquiries: [],
-    ideas: state.ideas.filter((i) => !i.projectId || ids.has(i.projectId)),
-    activity: state.activity.filter((a) => !a.projectId || ids.has(a.projectId)),
-    clients: state.clients.filter((c) => c.id === clientId),
+    inquiries: canCap(perm, CAP.INQUIRY_VIEW) ? state.inquiries : [],
+    ideas: canCap(perm, CAP.IDEA_VIEW) ? state.ideas.filter((i) => !i.projectId || ids.has(i.projectId)) : [],
+    reviews: canCap(perm, CAP.REVIEW_VIEW)
+      ? state.reviews
+        .filter((r) => ids.has(r.projectId))
+        .map((r) => ({
+          ...r,
+          comments: (r.comments || []).filter((c) => c.visibility !== 'internal' || seeInternal),
+        }))
+      : [],
+    clients: canCap(perm, CAP.CLIENT_VIEW) ? state.clients : state.clients.filter((c) => projects.some((p) => p.clientId === c.id)),
+    payments: seeFinance ? state.payments : [],
+    publishing: canCap(perm, CAP.DELIVERY_VIEW) ? state.publishing.filter((p) => !p.projectId || ids.has(p.projectId)) : [],
+    activity: (state.activity || []).filter((a) => {
+      if (a.visibility === 'finance' && !seeFinance) return false;
+      if (a.projectId && !ids.has(a.projectId) && perm.projectAccess === 'selected') return false;
+      return true;
+    }),
+    perm,
+    actor,
   };
 }
 
 function loadRole() {
   try {
     const role = localStorage.getItem(ROLE_KEY);
-    if (role === 'producer' || role === 'editor' || role === 'client') return role;
+    if (demoPeople[role]) return role;
   } catch {}
-  return 'producer';
+  return 'owner';
 }
 
 export function WorkspaceProvider({ children }) {
@@ -335,19 +373,57 @@ export function WorkspaceProvider({ children }) {
   }, []);
 
   const view = useMemo(() => scopeState(state, role), [state, role]);
+  const basePath = '/demo';
+  const can = useCallback((cap, opts) => canCap(view.perm, cap, opts), [view.perm]);
+
+  const guardedDispatch = useCallback((action) => {
+    if (role === 'viewer') return;
+    const actorName = (demoPeople[role] || demoPeople.owner).name;
+    dispatch({ ...action, actorName });
+  }, [role]);
+
+  const notifications = useMemo(() => {
+    const items = [];
+    if (role === 'editor') {
+      items.push({ id: 'n-assign', text: 'You were assigned to Northline Campaign.', href: '/demo/projects/northline', created_at: 'Now' });
+      view.reviews.filter((r) => r.status === 'Changes Requested').forEach((r) => {
+        items.push({ id: `n-${r.id}`, text: `Changes requested on ${r.title}.`, href: `/demo/reviews/${r.id}`, created_at: 'Now' });
+      });
+    }
+    if (role === 'producer' || role === 'owner' || role === 'admin') {
+      view.reviews.filter((r) => r.status === 'Approved').slice(0, 2).forEach((r) => {
+        items.push({ id: `n-ok-${r.id}`, text: `Client approved ${r.title}.`, href: `/demo/reviews/${r.id}`, created_at: 'Now' });
+      });
+      view.inquiries.filter((i) => i.status === 'New').slice(0, 2).forEach((i) => {
+        items.push({ id: `n-inq-${i.id}`, text: `New inquiry from ${i.company}.`, href: '/demo/inquiries', created_at: 'Now' });
+      });
+    }
+    if (role === 'finance') {
+      items.push({ id: 'n-fin', text: 'Review outstanding invoices.', href: '/demo/payments', created_at: 'Now' });
+    }
+    return items;
+  }, [role, view.reviews, view.inquiries]);
 
   const value = useMemo(() => ({
     ...view,
     all: state,
     role,
     setRole,
-    dispatch,
+    dispatch: guardedDispatch,
     convertInquiry,
     resetDemo,
     media: MEDIA,
     stages,
     paymentStatus,
-  }), [view, state, role, setRole, convertInquiry, resetDemo]);
+    mode: 'demo',
+    isDemo: true,
+    basePath,
+    href: (path) => `${basePath}${path.startsWith('/') ? path : `/${path}`}`,
+    can,
+    workspace: { id: 'demo', slug: 'demo', name: 'HOORAY! Production', currency: 'GEL' },
+    memberships: [{ role, workspaces: { slug: 'demo', name: 'HOORAY! Production' } }],
+    notifications,
+  }), [view, state, role, setRole, convertInquiry, resetDemo, can, guardedDispatch, notifications]);
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

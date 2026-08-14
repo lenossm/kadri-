@@ -7,9 +7,10 @@ import { useWorkspace } from '../state/WorkspaceContext';
 import { useToast } from '../state/ToastContext';
 import { formatDate, formatMoney } from '../utils/format';
 import { PAYMENT_STATUSES, matchesQuery, outstandingAmount, overdueAmount, paymentStatus } from '../utils/selectors';
+import { CAP } from '../permissions/engine';
 
 export default function PaymentsPage() {
-  const { payments, projects, clients, dispatch } = useWorkspace();
+  const { payments, projects, clients, dispatch, href, can } = useWorkspace();
   const { notify } = useToast();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All');
@@ -55,17 +56,19 @@ export default function PaymentsPage() {
             const display = paymentStatus(x);
             return (
               <div className="data-table__row" key={x.id}>
-                <b><Link to={`/app/projects/${x.projectId}`}>{projectTitle(x.projectId)}</Link><small className="muted-line">{clientName(x.clientId)}</small></b>
+                <b><Link to={href(`/projects/${x.projectId}`)}>{projectTitle(x.projectId)}</Link><small className="muted-line">{clientName(x.clientId)}</small></b>
                 <span>{x.invoice}</span>
                 <span>{formatMoney(x.amount)}</span>
                 <span>{formatDate(x.due)}</span>
                 <span className="status-cell">
                   <StatusPill>{display}</StatusPill>
-                  <select aria-label={`Update ${x.invoice}`} value={x.status === 'Paid' || x.status === 'Draft' ? x.status : (display === 'Overdue' ? 'Sent' : x.status)} onChange={(e) => setStatusOf(x.id, e.target.value)}>
-                    <option>Draft</option>
-                    <option>Sent</option>
-                    <option>Paid</option>
-                  </select>
+                  {can(CAP.PAYMENT_MANAGE) && (
+                    <select aria-label={`Update ${x.invoice}`} value={x.status === 'Paid' || x.status === 'Draft' ? x.status : (display === 'Overdue' ? 'Sent' : x.status)} onChange={(e) => setStatusOf(x.id, e.target.value)}>
+                      <option>Draft</option>
+                      <option>Sent</option>
+                      <option>Paid</option>
+                    </select>
+                  )}
                 </span>
               </div>
             );

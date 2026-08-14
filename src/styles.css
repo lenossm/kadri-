@@ -107,3 +107,40 @@
   .meta-block{grid-template-columns:1fr}
   .status-cell{grid-column:1/-1}
 }
+.quiet-button.is-on{color:var(--paper-ink);border-bottom:1px solid #1b1713}
+.account-wrap{position:relative}
+.account-menu{position:absolute;right:0;top:calc(100% + 8px);width:240px;background:#17130f;color:#eadfd3;border:1px solid rgba(240,188,147,.22);padding:8px 0;z-index:80;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.account-menu__head{padding:10px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:grid;gap:3px}
+.account-menu__head strong{font-size:13px}
+.account-menu__head small{font-family:var(--mono);font-size:7px;letter-spacing:.1em;color:#8f8175;text-transform:uppercase}
+.account-menu a,.account-menu button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;color:#d7cabb;padding:9px 14px;font-size:12px;cursor:pointer}
+.account-menu a:hover,.account-menu button:hover{background:#2a211b;color:#f1e2d1}
+.account-switch{padding:8px 14px 4px;border-top:1px solid rgba(255,255,255,.08)}
+.account-switch>span{font-family:var(--mono);font-size:7px;letter-spacing:.12em;color:#8a7d72}
+.account-switch button{padding-left:0}
+.auth-screen{min-height:100vh;background:#070604;color:#f2e9dc;display:grid;place-items:center;padding:40px 18px;position:relative}
+.auth-grain{position:absolute;inset:0;pointer-events:none;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E")}
+.auth-brand{position:absolute;top:28px;left:clamp(20px,4vw,70px);z-index:2}
+.auth-card{position:relative;z-index:1;width:min(460px,100%);border:1px solid rgba(246,183,137,.28);background:linear-gradient(180deg,rgba(29,18,12,.92),rgba(8,7,5,.96));padding:42px 36px 36px;box-shadow:0 30px 90px rgba(0,0,0,.4)}
+.auth-card h1{font-size:clamp(2.4rem,5vw,3.6rem);letter-spacing:-.06em;font-weight:500;margin:10px 0 22px}
+.auth-card p{color:#b8aa99;line-height:1.55}
+.auth-card .modal-form{padding:0}
+.auth-card input,.auth-card select{color:#f2e9dc;border-bottom-color:rgba(255,212,178,.24)}
+.auth-links{display:flex;flex-direction:column;gap:10px;margin-top:22px;font-size:12px;color:#c4b6a8}
+.auth-links a:hover{color:var(--copper-bright)}
+.vis-tag{display:inline-block;font-family:var(--mono);font-size:7px;letter-spacing:.12em;text-transform:uppercase;margin-right:8px;padding:2px 6px;border:1px solid rgba(227,156,108,.45);color:#d58b5d;font-style:normal}
+.vis-tag--internal{border-color:rgba(227,156,108,.5)}
+.vis-toggle{display:flex;gap:16px;font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#9b8777}
+.vis-toggle label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.internal-note{margin-top:22px;padding:14px 0;border-top:1px dashed rgba(20,17,14,.2);color:#5c564f;line-height:1.5}
+.perm-fieldset{border:1px solid rgba(20,17,14,.16);padding:14px;display:grid;gap:8px}
+.perm-fieldset legend{font-family:var(--mono);font-size:8px;letter-spacing:.1em;padding:0 6px}
+.profile-form{max-width:520px;padding:0}
+.role-grid--seven{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.avatar{border:0;cursor:pointer}
+@media (max-width:820px){
+  .account-menu{right:8px}
+  .auth-card{padding:28px 20px}
+}
+
+

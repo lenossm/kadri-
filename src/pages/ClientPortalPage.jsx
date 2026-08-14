@@ -30,7 +30,7 @@ export default function ClientPortalPage() {
   const request = (e) => {
     e.preventDefault();
     if (!review) return;
-    dispatch({ type: 'SET_REVIEW_STATUS', id: review.id, status: 'Changes Requested', note: note.trim() || undefined, time: 0, author: 'Client' });
+    dispatch({ type: 'SET_REVIEW_STATUS', id: review.id, status: 'Changes Requested', note: note.trim() || undefined, time: 0, author: 'Client', visibility: 'client' });
     setNoteOpen(false);
     setNote('');
     notify('Changes requested.');
@@ -41,7 +41,7 @@ export default function ClientPortalPage() {
       <nav className="portal-nav">
         <strong>KADRI</strong>
         <span>CLIENT PORTAL · DEMO</span>
-        <Link to="/app/dashboard">Internal workspace</Link>
+        <Link to="/demo/dashboard">Internal workspace</Link>
       </nav>
       <main>
         <header className="portal-hero">
@@ -72,11 +72,11 @@ export default function ClientPortalPage() {
               <div><span className="eyebrow">FEEDBACK</span><h2>{review.title}</h2></div>
               <StatusPill>{review.status}</StatusPill>
             </div>
-            {review.comments.length ? review.comments.map((c) => (
+            {(review.comments || []).filter((c) => c.visibility !== 'internal').length ? review.comments.filter((c) => c.visibility !== 'internal').map((c) => (
               <div className="portal-comment" key={c.id}><time>{formatTime(c.time)}</time><span><b>{c.author}</b> {c.text}</span></div>
             )) : <EmptyState title="No review comments yet." />}
             <div className="detail-actions">
-              <Link className="secondary-button" to={`/app/reviews/${review.id}`}>Open screening room</Link>
+              <Link className="secondary-button" to={`/demo/reviews/${review.id}`}>Open screening room</Link>
               <button className="secondary-button" type="button" onClick={() => setNoteOpen(true)}>Request changes</button>
               <button className="primary-button" type="button" onClick={approve}>Approve version</button>
             </div>

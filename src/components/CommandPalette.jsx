@@ -2,25 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, ArrowRight, Clapperboard, FileInput, Lightbulb, GalleryVerticalEnd, Aperture, Boxes, BadgeDollarSign, UsersRound, Files } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '../state/WorkspaceContext';
-
-const NAV = [
-  { type: 'Go', title: 'Dashboard', path: '/app/dashboard', Icon: Aperture },
-  { type: 'Go', title: 'Pipeline', path: '/app/pipeline', Icon: Boxes },
-  { type: 'Go', title: 'Projects', path: '/app/projects', Icon: Clapperboard },
-  { type: 'Go', title: 'Reviews', path: '/app/reviews', Icon: GalleryVerticalEnd },
-  { type: 'Go', title: 'Inquiries', path: '/app/inquiries', Icon: FileInput },
-  { type: 'Go', title: 'Clients', path: '/app/clients', Icon: UsersRound },
-  { type: 'Go', title: 'Payments', path: '/app/payments', Icon: BadgeDollarSign },
-  { type: 'Go', title: 'Publishing', path: '/app/publishing', Icon: Files },
-  { type: 'Go', title: 'Idea Pool', path: '/app/ideas', Icon: Lightbulb },
-];
+import { CAP, can } from '../permissions/engine';
 
 export default function CommandPalette({ open, onClose }) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
   const navigate = useNavigate();
-  const { projects, inquiries, ideas, reviews, role } = useWorkspace();
+  const { projects, inquiries, ideas, reviews, perm, href } = useWorkspace();
 
   useEffect(() => {
     if (open) {
@@ -30,26 +19,30 @@ export default function CommandPalette({ open, onClose }) {
   }, [open]);
 
   const items = useMemo(() => {
-    const hidden = role === 'client'
-      ? new Set(['Inquiries', 'Clients', 'Payments', 'Publishing', 'Idea Pool', 'Pipeline'])
-      : role === 'editor'
-        ? new Set(['Inquiries', 'Clients', 'Payments'])
-        : new Set();
-    const nav = NAV.filter((x) => !hidden.has(x.title));
+    const nav = [
+      can(perm, CAP.DASHBOARD) && { type: 'Go', title: 'Dashboard', path: href('/dashboard'), Icon: Aperture },
+      can(perm, CAP.PROJECT_VIEW) && { type: 'Go', title: 'Pipeline', path: href('/pipeline'), Icon: Boxes },
+      can(perm, CAP.PROJECT_VIEW) && { type: 'Go', title: 'Projects', path: href('/projects'), Icon: Clapperboard },
+      can(perm, CAP.REVIEW_VIEW) && { type: 'Go', title: 'Reviews', path: href('/reviews'), Icon: GalleryVerticalEnd },
+      can(perm, CAP.INQUIRY_VIEW) && { type: 'Go', title: 'Inquiries', path: href('/inquiries'), Icon: FileInput },
+      can(perm, CAP.CLIENT_VIEW) && { type: 'Go', title: 'Clients', path: href('/clients'), Icon: UsersRound },
+      (can(perm, CAP.PAYMENT_VIEW) || can(perm, CAP.FINANCE_VIEW)) && { type: 'Go', title: 'Payments', path: href('/payments'), Icon: BadgeDollarSign },
+      can(perm, CAP.DELIVERY_VIEW) && { type: 'Go', title: 'Publishing', path: href('/publishing'), Icon: Files },
+      can(perm, CAP.IDEA_VIEW) && { type: 'Go', title: 'Idea Pool', path: href('/ideas'), Icon: Lightbulb },
+    ].filter(Boolean);
     const records = [
-      ...projects.map((x) => ({ type: 'Project', title: x.title, path: `/app/projects/${x.id}`, Icon: Clapperboard })),
-      ...inquiries.map((x) => ({ type: 'Inquiry', title: x.company, path: '/app/inquiries', Icon: FileInput })),
-      ...ideas.map((x) => ({ type: 'Idea', title: x.title, path: '/app/ideas', Icon: Lightbulb })),
-      ...reviews.map((x) => ({ type: 'Review', title: x.title, path: `/app/reviews/${x.id}`, Icon: GalleryVerticalEnd })),
+      ...projects.map((x) => ({ type: 'Project', title: x.title, path: href(`/projects/${x.id}`), Icon: Clapperboard })),
+      ...inquiries.map((x) => ({ type: 'Inquiry', title: x.company, path: href('/inquiries'), Icon: FileInput })),
+      ...ideas.map((x) => ({ type: 'Idea', title: x.title, path: href('/ideas'), Icon: Lightbulb })),
+      ...reviews.map((x) => ({ type: 'Review', title: x.title, path: href(`/reviews/${x.id}`), Icon: GalleryVerticalEnd })),
     ];
     const all = [...nav, ...records];
     if (!query.trim()) return all.slice(0, 10);
     const q = query.toLowerCase();
     return all.filter((x) => `${x.type} ${x.title}`.toLowerCase().includes(q)).slice(0, 10);
-  }, [projects, inquiries, ideas, reviews, query, role]);
+  }, [projects, inquiries, ideas, reviews, query, perm, href]);
 
   useEffect(() => { setActive(0); }, [query, open]);
-
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {

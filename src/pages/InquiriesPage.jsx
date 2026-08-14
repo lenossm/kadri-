@@ -10,6 +10,7 @@ import { useToast } from '../state/ToastContext';
 import { formatDate, todayIso } from '../utils/format';
 import { INQUIRY_STATUSES, matchesQuery } from '../utils/selectors';
 import { inquirySources, projectTypes } from '../data/fixtures';
+import { CAP } from '../permissions/engine';
 
 const emptyForm = {
   company: '', person: '', email: '', phone: '', projectName: '', type: 'Commercial Film',
@@ -17,7 +18,7 @@ const emptyForm = {
 };
 
 export default function InquiriesPage() {
-  const { inquiries, dispatch, convertInquiry } = useWorkspace();
+  const { inquiries, dispatch, convertInquiry, href, can, actor } = useWorkspace();
   const { notify } = useToast();
   const navigate = useNavigate();
   const [selected, setSelected] = useState(null);
@@ -64,7 +65,7 @@ export default function InquiriesPage() {
     notify('Inquiry updated.');
   };
 
-  const onConvert = (e) => {
+  const onConvert = async (e) => {
     e.preventDefault();
     if (!current) return;
     const form = new FormData(e.currentTarget);
@@ -73,11 +74,11 @@ export default function InquiriesPage() {
       setErrors({ due: 'Deadline cannot be in the past.' });
       return;
     }
-    const id = convertInquiry(current.id, { owner: form.get('owner'), due });
+    const id = await convertInquiry(current.id, { owner: form.get('owner') || actor?.name, due });
     setConvertOpen(false);
     setSelected(null);
     notify(`${current.projectName || current.company} is now a project.`);
-    if (id) navigate(`/app/projects/${id}`);
+    if (id) navigate(href(`/projects/${id}`));
   };
 
   return (
@@ -86,7 +87,7 @@ export default function InquiriesPage() {
         eyebrow="INPUT / 01"
         title="Inquiries"
         copy="Every project starts as an incomplete sentence. Keep the useful parts, lose the inbox archaeology."
-        actions={<button className="primary-button" type="button" onClick={() => { setErrors({}); setNewOpen(true); }}><Plus size={16} /> New inquiry</button>}
+        actions={can(CAP.INQUIRY_MANAGE) ? <button className="primary-button" type="button" onClick={() => { setErrors({}); setNewOpen(true); }}><Plus size={16} /> New inquiry</button> : null}
       />
 
       <div className="toolbar">
@@ -158,7 +159,7 @@ export default function InquiriesPage() {
 
       <Modal open={convertOpen} title="Turn into project" onClose={() => setConvertOpen(false)}>
         <form className="modal-form" onSubmit={onConvert}>
-          <label>Project owner<input name="owner" defaultValue="Elene" /></label>
+          <label>Project owner<input name="owner" defaultValue={actor?.name || 'Elena'} /></label>
           <label>First deadline<input name="due" type="date" defaultValue={todayIso()} />{errors.due && <small className="field-error">{errors.due}</small>}</label>
           <button className="primary-button" type="submit">Create project <ArrowRight size={15} /></button>
         </form>

@@ -8,8 +8,8 @@ const modules = ['Inquiries', 'Pipeline', 'Reviews', 'Ideas', 'Payments', 'Publi
 
 export default function LandingPage() {
   const root = useRef(null);
-  const { all, role } = useWorkspace();
-  const enterTo = role === 'client' ? `/portal/${all.projects.find((p) => p.clientId === 'client-northline')?.id || 'northline'}` : '/app/dashboard';
+  const { all } = useWorkspace();
+  const enterTo = '/demo/dashboard';
   const inMotion = all.projects.filter((p) => p.stage !== 'Delivered').length;
   const incoming = all.inquiries.filter((x) => x.status === 'New').length;
   const inReview = all.reviews.filter((x) => x.status === 'Awaiting Review').length;
@@ -28,7 +28,7 @@ export default function LandingPage() {
       <div className="landing-grain" />
       <nav className="landing-nav">
         <a className="landing-brand" href="#top"><span>K</span>KADRI</a>
-        <div className="landing-links"><a href="#engine">Engine</a><a href="#systems">Systems</a><a href="#review">Review</a></div>
+        <div className="landing-links"><a href="#engine">Engine</a><a href="#systems">Systems</a><Link to="/login">Sign in</Link></div>
         <Link to={enterTo} className="nav-enter">Enter demo <ArrowRight size={16} /></Link>
       </nav>
 
@@ -48,7 +48,7 @@ export default function LandingPage() {
           <p className="hero-copy">Inquiry to brief. Shoot to review. Approval to archive. One living workspace for the production work nobody sees.</p>
           <div className="hero-actions">
             <Link className="primary-cta" to={enterTo}>Enter demo <MoveUpRight size={17} /></Link>
-            <a className="text-cta" href="#engine">Explore workflow ↓</a>
+            <Link className="text-cta" to="/signup">Create a workspace</Link>
           </div>
         </div>
         <div className="hero-orbit" aria-hidden="true">
@@ -92,7 +92,7 @@ export default function LandingPage() {
           <span className="eyebrow">03 / SCREENING ROOM</span>
           <h2>Feedback belongs on the frame where it happened.</h2>
           <p>Review versions, pin comments to time, seek straight back to the moment and move a cut from changes to approved without leaving the workspace.</p>
-          <Link to="/app/reviews/review-northline" className="primary-cta primary-cta--light">Open screening room <ArrowRight size={17} /></Link>
+          <Link to="/demo/reviews/review-northline" className="primary-cta primary-cta--light">Open screening room <ArrowRight size={17} /></Link>
         </div>
         <div className="review-monitor">
           <div className="monitor-head"><span>NORTHLINE / V4</span><span>00:18.5</span></div>
@@ -112,5 +112,5 @@ export default function LandingPage() {
 }
 
 function mapModule(name) {
-  return ({ Inquiries: '/app/inquiries', Pipeline: '/app/pipeline', Reviews: '/app/reviews', Ideas: '/app/ideas', Payments: '/app/payments', Publishing: '/app/publishing' })[name];
+  return ({ Inquiries: '/demo/inquiries', Pipeline: '/demo/pipeline', Reviews: '/demo/reviews', Ideas: '/demo/ideas', Payments: '/demo/payments', Publishing: '/demo/publishing' })[name];
 }

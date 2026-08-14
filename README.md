@@ -2,7 +2,9 @@
 
 KADRI is a portfolio concept for the operational side of a creative production studio. The public landing page is cinematic, while the internal workspace focuses on inquiries, pipeline, project records, video review, ideas, clients, payments, publishing and a simplified client portal.
 
-The project is intentionally built as a real React application rather than a collection of static design screenshots. All visible workspace screens are rendered from components and structured data. Demo edits are persisted to `localStorage`.
+Demo edits in `/demo` persist to `localStorage`. Live workspaces use Supabase Auth and Postgres.
+
+Copy `.env.example` and see `PRODUCTION_SETUP.md`.
 
 ## Stack
 

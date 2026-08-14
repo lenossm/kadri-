@@ -256,8 +256,8 @@ export const initialReviews = [
     due: '2026-08-14',
     submittedAt: '2026-08-13',
     comments: [
-      { id: 'c1', time: 8.2, author: 'Luka B.', text: 'Can we hold this frame slightly longer?' },
-      { id: 'c2', time: 18.5, author: 'Mariam', text: 'I would keep the silence here. It makes the next answer land.' },
+      { id: 'c1', time: 8.2, author: 'Anna Smith', text: 'Can we hold this frame slightly longer?', visibility: 'client' },
+      { id: 'c2', time: 18.5, author: 'Nino Beridze', text: 'INTERNAL — Client keeps changing the opening. Prepare two alternatives before V4.', visibility: 'internal' },
     ],
   },
   {
@@ -269,7 +269,7 @@ export const initialReviews = [
     due: '2026-08-15',
     submittedAt: '2026-08-12',
     comments: [
-      { id: 'c3', time: 12.4, author: 'Nata G.', text: 'The amber in this corridor is fighting the coat. Cool it a stop.' },
+      { id: 'c3', time: 12.4, author: 'Nata G.', text: 'The amber in this corridor is fighting the coat. Cool it a stop.', visibility: 'client' },
     ],
   },
   {
@@ -301,7 +301,7 @@ export const initialReviews = [
     due: '2026-08-06',
     submittedAt: '2026-08-05',
     comments: [
-      { id: 'c4', time: 4.1, author: 'Tamar S.', text: 'This is the cut. Caption the names in the last third and we are done.' },
+      { id: 'c4', time: 4.1, author: 'Tamar S.', text: 'This is the cut. Caption the names in the last third and we are done.', visibility: 'client' },
     ],
   },
 ];
@@ -335,9 +335,34 @@ export const initialActivity = [
   { id: 'act-6', at: '2026-08-14T08:15:00', text: 'New inquiry from Tbilisi Jazz Fest.', projectId: null },
 ];
 
+export const demoPeople = {
+  owner: { id: 'user-elena', name: 'Elena Mkheidze', title: 'Owner', email: 'elena@hooray.example' },
+  admin: { id: 'user-tamar', name: 'Tamar Admin', title: 'Admin', email: 'tamar@hooray.example' },
+  producer: { id: 'user-nino', name: 'Nino Beridze', title: 'Producer', email: 'nino@hooray.example' },
+  production_manager: { id: 'user-giorgi', name: 'Giorgi Kapanadze', title: 'Production Manager', email: 'giorgi@hooray.example' },
+  editor: { id: 'user-luka', name: 'Luka Mchedlishvili', title: 'Editor', email: 'luka@hooray.example' },
+  finance: { id: 'user-ana', name: 'Ana Gelashvili', title: 'Finance', email: 'ana@hooray.example' },
+  viewer: { id: 'user-dato', name: 'Dato Nemsadze', title: 'Viewer', email: 'dato@hooray.example' },
+};
+
+export const initialProjectMembers = [
+  { projectId: 'midnight-run', userId: 'user-luka', projectRole: 'Lead Editor' },
+  { projectId: 'northline', userId: 'user-luka', projectRole: 'Editor' },
+  { projectId: 'static-bloom', userId: 'user-luka', projectRole: 'Editor' },
+  { projectId: 'northline', userId: 'user-dato', projectRole: 'Viewer' },
+  { projectId: 'afterlight', userId: 'user-nino', projectRole: 'Producer' },
+];
+
+export const initialTeam = Object.entries(demoPeople).map(([role, person]) => ({
+  ...person,
+  role,
+  status: 'active',
+  projectAccess: role === 'editor' || role === 'viewer' ? 'selected' : 'all',
+}));
+
 export function createSeedState() {
   return {
-    version: 2,
+    version: 3,
     projects: initialProjects,
     inquiries: initialInquiries,
     ideas: initialIdeas,
@@ -346,5 +371,7 @@ export function createSeedState() {
     payments: initialPayments,
     publishing: initialPublishing,
     activity: initialActivity,
+    projectMembers: initialProjectMembers,
+    team: initialTeam,
   };
 }

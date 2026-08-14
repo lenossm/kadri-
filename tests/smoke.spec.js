@@ -12,18 +12,18 @@ test('landing opens and enter demo reaches dashboard', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/KADRI/);
   await page.getByRole('link', { name: /enter demo/i }).first().click();
-  await expect(page).toHaveURL(/\/app\/dashboard/);
+  await expect(page).toHaveURL(/\/demo\/dashboard/);
   await expect(page.getByRole('heading', { name: /good morning/i })).toBeVisible();
 });
 
 test('primary workspace routes load', async ({ page }) => {
   const routes = [
-    ['/app/dashboard', /good morning/i],
-    ['/app/inquiries', /inquiries/i],
-    ['/app/projects', /projects/i],
-    ['/app/reviews', /reviews/i],
-    ['/app/payments', /payments/i],
-    ['/app/pipeline', /pipeline/i],
+    ['/demo/dashboard', /good morning/i],
+    ['/demo/inquiries', /inquiries/i],
+    ['/demo/projects', /projects/i],
+    ['/demo/reviews', /reviews/i],
+    ['/demo/payments', /payments/i],
+    ['/demo/pipeline', /pipeline/i],
     ['/portal/northline', /northline/i],
   ];
   for (const [path, heading] of routes) {
@@ -32,8 +32,13 @@ test('primary workspace routes load', async ({ page }) => {
   }
 });
 
+test('legacy /app/dashboard redirects into demo', async ({ page }) => {
+  await page.goto('/app/dashboard');
+  await expect(page).toHaveURL(/\/demo\/dashboard/);
+});
+
 test('inquiry converts into a project', async ({ page }) => {
-  await page.goto('/app/inquiries');
+  await page.goto('/demo/inquiries');
   await page.getByRole('button', { name: /new inquiry/i }).click();
   await page.locator('input[name="company"]').fill('Harbor Press');
   await page.locator('input[name="person"]').fill('Nia K.');
@@ -43,12 +48,12 @@ test('inquiry converts into a project', async ({ page }) => {
   await page.locator('.inquiry-row', { hasText: 'Harbor Press' }).click();
   await page.getByRole('button', { name: /turn into project/i }).click();
   await page.getByRole('button', { name: /create project/i }).click();
-  await expect(page).toHaveURL(/\/app\/projects\//);
+  await expect(page).toHaveURL(/\/demo\/projects\//);
   await expect(page.getByRole('heading', { name: /harbor press/i })).toBeVisible();
 });
 
 test('review comment and approve persist in the room', async ({ page }) => {
-  await page.goto('/app/reviews/review-northline');
+  await page.goto('/demo/reviews/review-northline');
   await expect(page.getByText(/northline campaign/i).first()).toBeVisible();
   await page.getByPlaceholder(/leave a precise note/i).fill('Hold the platform two beats longer.');
   await page.getByRole('button', { name: /add comment/i }).click();

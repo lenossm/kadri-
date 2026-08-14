@@ -6,9 +6,10 @@ import EmptyState from '../components/EmptyState';
 import { useWorkspace } from '../state/WorkspaceContext';
 import { useToast } from '../state/ToastContext';
 import { matchesQuery } from '../utils/selectors';
+import { CAP } from '../permissions/engine';
 
 export default function IdeasPage() {
-  const { ideas, projects, dispatch } = useWorkspace();
+  const { ideas, projects, dispatch, can } = useWorkspace();
   const { notify } = useToast();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -63,7 +64,7 @@ export default function IdeasPage() {
         eyebrow="INPUT / 02"
         title="Idea Pool"
         copy="Loose thoughts before they become decks. Pin the ones that should stay in the room."
-        actions={<button className="primary-button" type="button" onClick={() => setOpen(true)}><Plus size={16} /> Drop an idea</button>}
+        actions={can(CAP.IDEA_MANAGE) ? <button className="primary-button" type="button" onClick={() => setOpen(true)}><Plus size={16} /> Drop an idea</button> : null}
       />
       <div className="toolbar">
         <input className="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search ideas…" aria-label="Search ideas" />

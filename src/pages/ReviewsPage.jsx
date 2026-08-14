@@ -9,7 +9,7 @@ import { relativeDay } from '../utils/format';
 import { REVIEW_STATUSES, matchesQuery } from '../utils/selectors';
 
 export default function ReviewsPage() {
-  const { reviews, projects, media } = useWorkspace();
+  const { reviews, projects, media, href } = useWorkspace();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All');
   const projectTitle = (id) => projects.find((p) => p.id === id)?.title || '—';
@@ -32,7 +32,7 @@ export default function ReviewsPage() {
       {visible.length ? (
         <div className="review-list">
           {visible.map((r) => (
-            <Link to={`/app/reviews/${r.id}`} className="review-row" key={r.id}>
+            <Link to={href(`/reviews/${r.id}`)} className="review-row" key={r.id}>
               <div className="review-thumb"><video muted autoPlay loop playsInline src={media.src} poster={media.poster} /></div>
               <div>
                 <span className="eyebrow">{r.version} / {projectTitle(r.projectId)}</span>

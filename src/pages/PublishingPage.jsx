@@ -6,11 +6,12 @@ import { useWorkspace } from '../state/WorkspaceContext';
 import { useToast } from '../state/ToastContext';
 import { formatDate, todayIso } from '../utils/format';
 import { PUBLISH_STATUSES, matchesQuery } from '../utils/selectors';
+import { CAP } from '../permissions/engine';
 
 const destinations = ['Instagram', 'YouTube', 'TVC Delivery', 'Client Drive', 'Final Master'];
 
 export default function PublishingPage() {
-  const { projects, publishing, dispatch, media } = useWorkspace();
+  const { projects, publishing, dispatch, media, can } = useWorkspace();
   const { notify } = useToast();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('All');
@@ -35,6 +36,7 @@ export default function PublishingPage() {
 
   const save = (e) => {
     e.preventDefault();
+    if (!can(CAP.DELIVERY_MANAGE)) return;
     if (!projectId || !title.trim()) return;
     const existing = publishing.find((p) => p.projectId === projectId);
     if (existing) {
@@ -69,7 +71,7 @@ export default function PublishingPage() {
           </label>
           <label>Planned date<input type="date" value={planned} onChange={(e) => setPlanned(e.target.value)} /></label>
           <label className="check"><input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} /> Feature on homepage</label>
-          <button type="submit" className="primary-button">Save publishing draft</button>
+          {can(CAP.DELIVERY_MANAGE) && <button type="submit" className="primary-button">Save publishing draft</button>}
         </form>
         <div className="publish-preview">
           <span className="eyebrow">PUBLIC PREVIEW</span>
@@ -101,9 +103,11 @@ export default function PublishingPage() {
               <span>{item.featured ? 'Featured' : ''}</span>
               <span className="status-cell">
                 <StatusPill>{item.status}</StatusPill>
+                {can(CAP.DELIVERY_MANAGE) && (
                 <select aria-label={`Update ${item.publicTitle}`} value={item.status} onChange={(e) => { dispatch({ type: 'SET_PUBLISHING', id: item.id, patch: { status: e.target.value } }); notify(`${item.publicTitle} marked ${e.target.value}.`); }}>
                   {PUBLISH_STATUSES.map((s) => <option key={s}>{s}</option>)}
                 </select>
+                )}
               </span>
             </div>
           ))}
